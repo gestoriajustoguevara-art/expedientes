@@ -428,6 +428,10 @@
         }
 
         async function registrarMovimiento() {
+            console.log('Botón clickeado');
+            console.log('Expediente:', state.expedienteActual);
+            console.log('Destino:', state.destinoSeleccionado);
+
             if (!state.expedienteActual.trim() || !state.destinoSeleccionado) {
                 mostrarMensaje('⚠ Completa todos los campos');
                 return;
@@ -484,6 +488,16 @@
             }
         }
 
+        function actualizarExpediente(valor) {
+            state.expedienteActual = valor;
+            console.log('Expediente actualizado:', state.expedienteActual);
+        }
+
+        function actualizarDestino(valor) {
+            state.destinoSeleccionado = valor;
+            console.log('Destino actualizado:', state.destinoSeleccionado);
+        }
+
         // Renderizado
         function render() {
             const app = document.getElementById('app');
@@ -499,205 +513,4 @@
             }
 
             if (state.vista === 'home') {
-                renderHome(app);
-            } else if (state.vista === 'scan') {
-                renderScan(app);
-            } else if (state.vista === 'list') {
-                renderList(app);
-            } else if (state.vista === 'history') {
-                renderHistory(app);
-            }
-        }
-
-        function renderHome(app) {
-            const syncIcon = state.sincronizado ? '☁️' : '⚠️';
-            const syncClass = state.sincronizado ? 'connected' : 'disconnected';
-            const syncText = state.sincronizado ? 'Sincronizado' : 'Sin conexión';
-            const syncTime = state.ultimaSync ? state.ultimaSync.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
-
-            app.innerHTML = `
-                <div class="card">
-                    <h1>Control de Expedientes</h1>
-                    <p class="subtitle">Sistema de seguimiento por QR</p>
-                    <div class="sync-indicator ${syncClass}">
-                        <span>${syncIcon} ${syncText}</span>
-                        ${syncTime ? `<span style="color: #6b7280; font-size: 12px;">${syncTime}</span>` : ''}
-                    </div>
-                </div>
-
-                <button class="btn btn-primary" onclick="cambiarVista('scan')">
-                    <span style="font-size: 28px;">📷</span>
-                    <span>Registrar Movimiento</span>
-                </button>
-
-                <button class="btn btn-success" onclick="cambiarVista('list')">
-                    <span style="font-size: 28px;">📄</span>
-                    <span>Ver Expedientes</span>
-                </button>
-
-                <button class="btn btn-purple" onclick="cambiarVista('history')">
-                    <span style="font-size: 28px;">🕐</span>
-                    <span>Historial Completo</span>
-                </button>
-
-                <div class="stats">
-                    <div>
-                        <span class="stats-label">Total expedientes: </span>
-                        <span class="stats-value">${Object.keys(state.expedientes).length}</span>
-                    </div>
-                    <button class="refresh-btn" onclick="cargarDesdeSheets()" title="Recargar">
-                        🔄
-                    </button>
-                </div>
-
-                <div class="info-box">
-                    <p>☁️ Datos sincronizados con Google Sheets en tiempo real</p>
-                </div>
-            `;
-        }
-
-        function renderScan(app) {
-            app.innerHTML = `
-                <button class="back-btn" onclick="cambiarVista('home')">
-                    <span style="font-size: 20px;">✕</span>
-                    <span>Volver</span>
-                </button>
-
-                <div class="card">
-                    <h1 style="font-size: 24px; text-align: left; margin-bottom: 24px;">Registrar Movimiento</h1>
-
-                    <div class="form-group">
-                        <label>Número de Expediente</label>
-                        <input type="text" id="expedienteInput" placeholder="Ej: GE25/1" 
-                               value="${state.expedienteActual}" 
-                               oninput="state.expedienteActual = this.value">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Destino</label>
-                        <select id="destinoSelect" onchange="state.destinoSeleccionado = this.value">
-                            <option value="">Selecciona un destino...</option>
-                            ${DESTINOS.map(d => `<option value="${d}" ${state.destinoSeleccionado === d ? 'selected' : ''}>${d}</option>`).join('')}
-                        </select>
-                    </div>
-
-                    <button class="btn btn-primary" onclick="registrarMovimiento()">
-                        Registrar Movimiento
-                    </button>
-                </div>
-            `;
-            setTimeout(() => document.getElementById('expedienteInput')?.focus(), 100);
-        }
-
-        function renderList(app) {
-            const expedientesArray = Object.values(state.expedientes)
-                .filter(exp => exp.numero.toLowerCase().includes(state.busqueda.toLowerCase()))
-                .sort((a, b) => {
-                    if (!a.historial.length) return 1;
-                    if (!b.historial.length) return -1;
-                    return b.historial[0].timestamp - a.historial[0].timestamp;
-                });
-
-            app.innerHTML = `
-                <button class="back-btn" onclick="cambiarVista('home'); state.busqueda = '';">
-                    <span style="font-size: 20px;">✕</span>
-                    <span>Volver</span>
-                </button>
-
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <h1 style="font-size: 24px; text-align: left; margin: 0;">Expedientes Activos</h1>
-                        <button class="refresh-btn" onclick="cargarDesdeSheets()">🔄</button>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="text" placeholder="🔍 Buscar expediente..." 
-                               value="${state.busqueda}" 
-                               oninput="state.busqueda = this.value; render();">
-                    </div>
-
-                    ${Object.keys(state.expedientes).length === 0 ? 
-                        '<div class="empty-state">No hay expedientes registrados aún</div>' :
-                        expedientesArray.length === 0 ?
-                        `<div class="empty-state">No se encontraron expedientes con "${state.busqueda}"</div>` :
-                        expedientesArray.map(exp => `
-                            <div class="expediente-item">
-                                <div class="expediente-header">
-                                    <div style="flex: 1;">
-                                        <div class="expediente-numero">${exp.numero}</div>
-                                        <div class="expediente-ubicacion">
-                                            <span>📍</span>
-                                            <span>${exp.ubicacionActual}</span>
-                                        </div>
-                                        ${exp.historial.length > 0 ? 
-                                            `<div class="expediente-fecha">${exp.historial[0].fecha}</div>` : ''}
-                                    </div>
-                                    <button class="delete-btn" onclick="eliminarExpediente('${exp.numero}')" title="Eliminar">🗑️</button>
-                                </div>
-                            </div>
-                        `).join('')
-                    }
-                </div>
-            `;
-        }
-
-        function renderHistory(app) {
-            const expedientesArray = Object.values(state.expedientes)
-                .filter(exp => exp.numero.toLowerCase().includes(state.busqueda.toLowerCase()))
-                .sort((a, b) => {
-                    if (!a.historial.length) return 1;
-                    if (!b.historial.length) return -1;
-                    return b.historial[0].timestamp - a.historial[0].timestamp;
-                });
-
-            app.innerHTML = `
-                <button class="back-btn" onclick="cambiarVista('home'); state.busqueda = '';">
-                    <span style="font-size: 20px;">✕</span>
-                    <span>Volver</span>
-                </button>
-
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <h1 style="font-size: 24px; text-align: left; margin: 0;">Historial Completo</h1>
-                        <button class="refresh-btn" onclick="cargarDesdeSheets()">🔄</button>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="text" placeholder="🔍 Buscar expediente..." 
-                               value="${state.busqueda}" 
-                               oninput="state.busqueda = this.value; render();">
-                    </div>
-
-                    ${Object.keys(state.expedientes).length === 0 ? 
-                        '<div class="empty-state">No hay historial disponible</div>' :
-                        expedientesArray.length === 0 ?
-                        `<div class="empty-state">No se encontraron expedientes con "${state.busqueda}"</div>` :
-                        expedientesArray.map(exp => `
-                            <div style="margin-bottom: 24px;">
-                                <div class="expediente-numero" style="margin-bottom: 12px;">${exp.numero}</div>
-                                ${exp.historial.length === 0 ? 
-                                    '<p style="color: #6b7280; font-size: 14px;">Sin movimientos</p>' :
-                                    exp.historial.map(mov => `
-                                        <div class="historial-item">
-                                            <div class="historial-destino">${mov.destino}</div>
-                                            <div class="historial-fecha">${mov.fecha}</div>
-                                        </div>
-                                    `).join('')
-                                }
-                            </div>
-                        `).join('')
-                    }
-                </div>
-            `;
-        }
-
-        function cambiarVista(vista) {
-            state.vista = vista;
-            render();
-        }
-
-        // Inicializar
-        cargarDesdeSheets();
-    </script>
-</body>
-</html>
+                rend
