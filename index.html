@@ -618,18 +618,13 @@
                         `<div class="empty-state">No se encontraron expedientes con "${state.busqueda}"</div>` :
                         expedientesArray.map(exp => `
                             <div class="expediente-item">
-                                <div class="expediente-header">
-                                    <div style="flex: 1;">
-                                        <div class="expediente-numero">${exp.numero}</div>
-                                        <div class="expediente-ubicacion">
-                                            <span>📍</span>
-                                            <span>${exp.ubicacionActual}</span>
-                                        </div>
-                                        ${exp.historial.length > 0 ? 
-                                            `<div class="expediente-fecha">${exp.historial[0].fecha}</div>` : ''}
-                                    </div>
-                                    <button class="delete-btn" onclick="eliminarExpediente('${exp.numero}')" title="Eliminar">🗑️</button>
+                                <div class="expediente-numero">${exp.numero}</div>
+                                <div class="expediente-ubicacion">
+                                    <span>📍</span>
+                                    <span>${exp.ubicacionActual}</span>
                                 </div>
+                                ${exp.historial.length > 0 ? 
+                                    `<div class="expediente-fecha">${exp.historial[0].fecha}</div>` : ''}
                             </div>
                         `).join('')
                     }
