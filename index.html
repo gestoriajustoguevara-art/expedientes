@@ -329,7 +329,7 @@
 
     <script>
         // CONFIGURACIÓN - Cambia esta URL por la tuya
-        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxkrT2dmeGITrHOg7KreL76ZqU26ePDeMMqgbGxBD6gig-B97E7ON_Tqq7I4fcDXkW1/exec';
+        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyuXDi4gZMZCZrGvdwO0Wiy4o_EWxt12OKHg0G-MnE1f04s-Jii72Y-_cVffdsS3z47/exec';
 
         const DESTINOS = [
             "En uso Paco",
@@ -394,17 +394,13 @@
                 state.sincronizado = false;
                 render();
 
-                const response = await fetch(SHEETS_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'save',
-                        data: nuevosDatos
-                    })
+                // Usar GET con parámetros en lugar de POST para evitar CORS
+                const params = new URLSearchParams({
+                    action: 'save',
+                    data: JSON.stringify(nuevosDatos)
                 });
 
+                const response = await fetch(`${SHEETS_URL}?${params.toString()}`);
                 const result = await response.json();
 
                 if (result.success) {
