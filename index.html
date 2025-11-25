@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Expedientes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #ddd6fe 100%);
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding-top: 32px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 16px;
+        }
+
+        .sync-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+
+        .sync-indicator.connected {
+            color: #16a34a;
+        }
+
+        .sync-indicator.disconnected {
+            color: #dc2626;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+            color: white;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+        }
+
+        .btn-primary:hover {
+            background: #4338ca;
+        }
+
+        .btn-success {
+            background: #16a34a;
+        }
+
+        .btn-success:hover {
+            background: #15803d;
+        }
+
+        .btn-purple {
+            background: #9333ea;
+        }
+
+        .btn-purple:hover {
+            background: #7e22ce;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            padding: 12px;
+            font-size: 16px;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #374151;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 16px;
+            padding: 8px;
+        }
+
+        .back-btn:hover {
+            color: #111827;
+        }
+
+        .expediente-item {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+
+        .expediente-item:hover {
+            border-color: #a5b4fc;
+        }
+
+        .expediente-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+
+        .expediente-numero {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .expediente-ubicacion {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            color: #374151;
+        }
+
+        .expediente-fecha {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 8px;
+            font-size: 20px;
+        }
+
+        .delete-btn:hover {
+            color: #dc2626;
+        }
+
+        .historial-item {
+            border-left: 4px solid #a5b4fc;
+            padding: 12px;
+            padding-left: 16px;
+            margin-bottom: 8px;
+            background: #f9fafb;
+            border-radius: 4px;
+        }
+
+        .historial-destino {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .historial-fecha {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .mensaje {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .stats-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .stats-value {
+            font-weight: bold;
+            color: #4f46e5;
+            font-size: 18px;
+        }
+
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: #4f46e5;
+            cursor: pointer;
+            padding: 8px;
+            font-size: 20px;
+        }
+
+        .refresh-btn:hover {
+            color: #4338ca;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #6b7280;
+            padding: 40px 20px;
+        }
+
+        .info-box {
+            background: #dcfce7;
+            border: 2px solid #86efac;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+        }
+
+        .info-box p {
+            font-size: 12px;
+            color: #166534;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app"></div>
+
+    <script>
+        // CONFIGURACIÓN - Cambia esta URL por la tuya
+        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxkrT2dmeGITrHOg7KreL76ZqU26ePDeMMqgbGxBD6gig-B97E7ON_Tqq7I4fcDXkW1/exec';
+
+        const DESTINOS = [
+            "En uso Paco",
+            "Montón expediente en notaría",
+            "Montón expediente registro",
+            "Montón expediente pendiente de documentación",
+            "Montón expediente en trámite",
+            "Montón expediente para entregar a clientes",
+            "En uso Sara",
+            "En uso María José"
+        ];
+
+        let state = {
+            vista: 'home',
+            expedientes: {},
+            expedienteActual: '',
+            destinoSeleccionado: '',
+            busqueda: '',
+            cargando: true,
+            sincronizado: true,
+            ultimaSync: null
+        };
+
+        // Funciones de utilidad
+        function mostrarMensaje(texto) {
+            const mensaje = document.createElement('div');
+            mensaje.className = 'mensaje';
+            mensaje.textContent = texto;
+            document.body.appendChild(mensaje);
+            setTimeout(() => mensaje.remove(), 3000);
+        }
+
+        async function cargarDesdeSheets() {
+            try {
+                state.cargando = true;
+                render();
+
+                const response = await fetch(SHEETS_URL);
+                const data = await response.json();
+
+                if (data.error) {
+                    mostrarMensaje('⚠ Error: ' + data.error);
+                    state.sincronizado = false;
+                } else {
+                    state.expedientes = data;
+                    state.sincronizado = true;
+                    state.ultimaSync = new Date();
+                    console.log('✓ Datos cargados:', data);
+                }
+            } catch (error) {
+                console.error('Error al cargar:', error);
+                mostrarMensaje('✗ Error de conexión: ' + error.message);
+                state.sincronizado = false;
+            } finally {
+                state.cargando = false;
+                render();
+            }
+        }
+
+        async function guardarEnSheets(nuevosDatos) {
+            try {
+                state.sincronizado = false;
+                render();
+
+                const response = await fetch(SHEETS_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'save',
+                        data: nuevosDatos
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    state.expedientes = nuevosDatos;
+                    state.sincronizado = true;
+                    state.ultimaSync = new Date();
+                    mostrarMensaje('✓ Guardado en Google Sheets');
+                    console.log('✓ Guardado exitoso:', result);
+                    return true;
+                } else {
+                    throw new Error(result.error || 'Error al guardar');
+                }
+            } catch (error) {
+                console.error('Error al guardar:', error);
+                mostrarMensaje('✗ Error al guardar: ' + error.message);
+                state.sincronizado = false;
+                return false;
+            } finally {
+                render();
+            }
+        }
+
+        async function registrarMovimiento() {
+            if (!state.expedienteActual.trim() || !state.destinoSeleccionado) {
+                mostrarMensaje('⚠ Completa todos los campos');
+                return;
+            }
+
+            const ahora = new Date();
+            const timestamp = ahora.toLocaleString('es-ES', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const nuevoMovimiento = {
+                destino: state.destinoSeleccionado,
+                fecha: timestamp,
+                timestamp: ahora.getTime()
+            };
+
+            const expedientesActualizados = { ...state.expedientes };
+
+            if (!expedientesActualizados[state.expedienteActual]) {
+                expedientesActualizados[state.expedienteActual] = {
+                    numero: state.expedienteActual,
+                    ubicacionActual: state.destinoSeleccionado,
+                    historial: []
+                };
+            } else {
+                expedientesActualizados[state.expedienteActual].ubicacionActual = state.destinoSeleccionado;
+            }
+
+            expedientesActualizados[state.expedienteActual].historial.unshift(nuevoMovimiento);
+
+            const guardado = await guardarEnSheets(expedientesActualizados);
+
+            if (guardado) {
+                mostrarMensaje(`✓ ${state.expedienteActual} → ${state.destinoSeleccionado}`);
+                state.expedienteActual = '';
+                state.destinoSeleccionado = '';
+                setTimeout(() => {
+                    state.vista = 'home';
+                    render();
+                }, 1500);
+            }
+        }
+
+        async function eliminarExpediente(numero) {
+            if (confirm(`¿Seguro que quieres eliminar el expediente ${numero}?`)) {
+                const expedientesActualizados = { ...state.expedientes };
+                delete expedientesActualizados[numero];
+                await guardarEnSheets(expedientesActualizados);
+                mostrarMensaje('✓ Expediente eliminado');
+            }
+        }
+
+        // Renderizado
+        function render() {
+            const app = document.getElementById('app');
+
+            if (state.cargando) {
+                app.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p style="color: #6b7280;">Cargando desde Google Sheets...</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (state.vista === 'home') {
+                renderHome(app);
+            } else if (state.vista === 'scan') {
+                renderScan(app);
+            } else if (state.vista === 'list') {
+                renderList(app);
+            } else if (state.vista === 'history') {
+                renderHistory(app);
+            }
+        }
+
+        function renderHome(app) {
+            const syncIcon = state.sincronizado ? '☁️' : '⚠️';
+            const syncClass = state.sincronizado ? 'connected' : 'disconnected';
+            const syncText = state.sincronizado ? 'Sincronizado' : 'Sin conexión';
+            const syncTime = state.ultimaSync ? state.ultimaSync.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+
+            app.innerHTML = `
+                <div class="card">
+                    <h1>Control de Expedientes</h1>
+                    <p class="subtitle">Sistema de seguimiento por QR</p>
+                    <div class="sync-indicator ${syncClass}">
+                        <span>${syncIcon} ${syncText}</span>
+                        ${syncTime ? `<span style="color: #6b7280; font-size: 12px;">${syncTime}</span>` : ''}
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="cambiarVista('scan')">
+                    <span style="font-size: 28px;">📷</span>
+                    <span>Registrar Movimiento</span>
+                </button>
+
+                <button class="btn btn-success" onclick="cambiarVista('list')">
+                    <span style="font-size: 28px;">📄</span>
+                    <span>Ver Expedientes</span>
+                </button>
+
+                <button class="btn btn-purple" onclick="cambiarVista('history')">
+                    <span style="font-size: 28px;">🕐</span>
+                    <span>Historial Completo</span>
+                </button>
+
+                <div class="stats">
+                    <div>
+                        <span class="stats-label">Total expedientes: </span>
+                        <span class="stats-value">${Object.keys(state.expedientes).length}</span>
+                    </div>
+                    <button class="refresh-btn" onclick="cargarDesdeSheets()" title="Recargar">
+                        🔄
+                    </button>
+                </div>
+
+                <div class="info-box">
+                    <p>☁️ Datos sincronizados con Google Sheets en tiempo real</p>
+                </div>
+            `;
+        }
+
+        function renderScan(app) {
+            app.innerHTML = `
+                <button class="back-btn" onclick="cambiarVista('home')">
+                    <span style="font-size: 20px;">✕</span>
+                    <span>Volver</span>
+                </button>
+
+                <div class="card">
+                    <h1 style="font-size: 24px; text-align: left; margin-bottom: 24px;">Registrar Movimiento</h1>
+
+                    <div class="form-group">
+                        <label>Número de Expediente</label>
+                        <input type="text" id="expedienteInput" placeholder="Ej: GE25/1" 
+                               value="${state.expedienteActual}" 
+                               oninput="state.expedienteActual = this.value">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Destino</label>
+                        <select id="destinoSelect" onchange="state.destinoSeleccionado = this.value">
+                            <option value="">Selecciona un destino...</option>
+                            ${DESTINOS.map(d => `<option value="${d}" ${state.destinoSeleccionado === d ? 'selected' : ''}>${d}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="registrarMovimiento()" 
+                            ${!state.expedienteActual.trim() || !state.destinoSeleccionado ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                        Registrar Movimiento
+                    </button>
+                </div>
+            `;
+            setTimeout(() => document.getElementById('expedienteInput')?.focus(), 100);
+        }
+
+        function renderList(app) {
+            const expedientesArray = Object.values(state.expedientes)
+                .filter(exp => exp.numero.toLowerCase().includes(state.busqueda.toLowerCase()))
+                .sort((a, b) => {
+                    if (!a.historial.length) return 1;
+                    if (!b.historial.length) return -1;
+                    return b.historial[0].timestamp - a.historial[0].timestamp;
+                });
+
+            app.innerHTML = `
+                <button class="back-btn" onclick="cambiarVista('home'); state.busqueda = '';">
+                    <span style="font-size: 20px;">✕</span>
+                    <span>Volver</span>
+                </button>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h1 style="font-size: 24px; text-align: left; margin: 0;">Expedientes Activos</h1>
+                        <button class="refresh-btn" onclick="cargarDesdeSheets()">🔄</button>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" placeholder="🔍 Buscar expediente..." 
+                               value="${state.busqueda}" 
+                               oninput="state.busqueda = this.value; render();">
+                    </div>
+
+                    ${Object.keys(state.expedientes).length === 0 ? 
+                        '<div class="empty-state">No hay expedientes registrados aún</div>' :
+                        expedientesArray.length === 0 ?
+                        `<div class="empty-state">No se encontraron expedientes con "${state.busqueda}"</div>` :
+                        expedientesArray.map(exp => `
+                            <div class="expediente-item">
+                                <div class="expediente-header">
+                                    <div style="flex: 1;">
+                                        <div class="expediente-numero">${exp.numero}</div>
+                                        <div class="expediente-ubicacion">
+                                            <span>📍</span>
+                                            <span>${exp.ubicacionActual}</span>
+                                        </div>
+                                        ${exp.historial.length > 0 ? 
+                                            `<div class="expediente-fecha">${exp.historial[0].fecha}</div>` : ''}
+                                    </div>
+                                    <button class="delete-btn" onclick="eliminarExpediente('${exp.numero}')" title="Eliminar">🗑️</button>
+                                </div>
+                            </div>
+                        `).join('')
+                    }
+                </div>
+            `;
+        }
+
+        function renderHistory(app) {
+            const expedientesArray = Object.values(state.expedientes)
+                .filter(exp => exp.numero.toLowerCase().includes(state.busqueda.toLowerCase()))
+                .sort((a, b) => {
+                    if (!a.historial.length) return 1;
+                    if (!b.historial.length) return -1;
+                    return b.historial[0].timestamp - a.historial[0].timestamp;
+                });
+
+            app.innerHTML = `
+                <button class="back-btn" onclick="cambiarVista('home'); state.busqueda = '';">
+                    <span style="font-size: 20px;">✕</span>
+                    <span>Volver</span>
+                </button>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h1 style="font-size: 24px; text-align: left; margin: 0;">Historial Completo</h1>
+                        <button class="refresh-btn" onclick="cargarDesdeSheets()">🔄</button>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" placeholder="🔍 Buscar expediente..." 
+                               value="${state.busqueda}" 
+                               oninput="state.busqueda = this.value; render();">
+                    </div>
+
+                    ${Object.keys(state.expedientes).length === 0 ? 
+                        '<div class="empty-state">No hay historial disponible</div>' :
+                        expedientesArray.length === 0 ?
+                        `<div class="empty-state">No se encontraron expedientes con "${state.busqueda}"</div>` :
+                        expedientesArray.map(exp => `
+                            <div style="margin-bottom: 24px;">
+                                <div class="expediente-numero" style="margin-bottom: 12px;">${exp.numero}</div>
+                                ${exp.historial.length === 0 ? 
+                                    '<p style="color: #6b7280; font-size: 14px;">Sin movimientos</p>' :
+                                    exp.historial.map(mov => `
+                                        <div class="historial-item">
+                                            <div class="historial-destino">${mov.destino}</div>
+                                            <div class="historial-fecha">${mov.fecha}</div>
+                                        </div>
+                                    `).join('')
+                                }
+                            </div>
+                        `).join('')
+                    }
+                </div>
+            `;
+        }
+
+        function cambiarVista(vista) {
+            state.vista = vista;
+            render();
+        }
+
+        // Inicializar
+        cargarDesdeSheets();
+    </script>
+</body>
+</html>
